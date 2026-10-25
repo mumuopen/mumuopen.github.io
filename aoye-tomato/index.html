@@ -1,0 +1,1063 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>熬夜番茄钟 · 熬一颗，蔫一颗</title>
+<meta name="description" content="把熬夜切成看得见的蔫番茄：每熬 25 分钟，番茄君就蔫一分；只有睡觉和睡前仪式金番茄才能救它回来。">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M50 26C72 26 82 44 82 58c0 18-14 28-32 28S18 76 18 58c0-14 10-32 32-32z' fill='%23FF6B57'/%3E%3Cpath d='M50 28c-2-8 0-14 4-18 1 8 0 13-2 18zM50 27c-8-6-18-6-24-2 8 3 17 5 24 4zM50 27c8-7 18-8 24-5-8 4-17 6-24 6z' fill='%235FAE58'/%3E%3Ccircle cx='38' cy='54' r='5' fill='%234A3B2F'/%3E%3Ccircle cx='62' cy='54' r='5' fill='%234A3B2F'/%3E%3Cellipse cx='50' cy='68' rx='7' ry='5' fill='%234A3B2F'/%3E%3C/svg%3E">
+<style>
+  :root{
+    --tomato:#FF6B57; --tomato-deep:#E8503C; --tomato-soft:#FFD9D1;
+    --leaf:#5FAE58; --leaf-dark:#4A8F44;
+    --cream:#FFF6EC; --card:#FFFFFF; --butter:#FFEAC2;
+    --ink:#4A3B2F; --ink-soft:#93826F; --line:#F3E3D3;
+    --gold:#FFC53D; --gold-deep:#F5A623;
+    --bg1:#FFF3E2; --bg2:#FFE7D0;
+    --shadow:0 10px 30px rgba(232,80,60,.10);
+    --r-lg:28px; --r-md:20px; --r-sm:14px;
+  }
+  body.night{
+    --cream:#241F35; --card:#2E2848; --butter:#3A3357;
+    --ink:#F2ECDD; --ink-soft:#A79FC4; --line:#423B66;
+    --bg1:#1B1729; --bg2:#241F35;
+    --tomato-soft:#5C4470;
+    --shadow:0 10px 30px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Varela Round",system-ui,sans-serif;
+    color:var(--ink);
+    background:
+      radial-gradient(1200px 500px at 85% -10%, rgba(255,197,61,.20), transparent 60%),
+      radial-gradient(900px 420px at -10% 110%, rgba(255,107,87,.16), transparent 55%),
+      linear-gradient(160deg,var(--bg1),var(--bg2));
+    background-attachment:fixed;
+    min-height:100vh;
+    transition:background .6s ease, color .3s ease;
+    padding:max(12px, env(safe-area-inset-top)) 12px calc(24px + env(safe-area-inset-bottom));
+  }
+  body.night::before{
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+    background-image:
+      radial-gradient(2px 2px at 12% 18%, rgba(255,255,255,.9), transparent 100%),
+      radial-gradient(1.6px 1.6px at 78% 8%, rgba(255,255,255,.7), transparent 100%),
+      radial-gradient(1.6px 1.6px at 55% 26%, rgba(255,255,255,.55), transparent 100%),
+      radial-gradient(2.4px 2.4px at 88% 34%, rgba(255,255,255,.8), transparent 100%),
+      radial-gradient(1.4px 1.4px at 30% 44%, rgba(255,255,255,.5), transparent 100%),
+      radial-gradient(1.8px 1.8px at 66% 62%, rgba(255,255,255,.45), transparent 100%),
+      radial-gradient(1.4px 1.4px at 16% 74%, rgba(255,255,255,.6), transparent 100%),
+      radial-gradient(2px 2px at 42% 84%, rgba(255,255,255,.5), transparent 100%);
+    animation:starTwinkle 5s ease-in-out infinite alternate;
+  }
+  @keyframes starTwinkle{from{opacity:.45}to{opacity:1}}
+  #app{position:relative;z-index:1;max-width:520px;margin:0 auto}
+
+  /* ============ 顶部 ============ */
+  header{display:flex;align-items:center;justify-content:space-between;padding:6px 2px 14px}
+  .logo{display:flex;align-items:center;gap:8px;font-weight:800;font-size:19px;letter-spacing:.5px}
+  .logo .lg-tomato{width:30px;height:30px;transform:rotate(-6deg)}
+  .logo small{font-size:10px;font-weight:600;color:var(--ink-soft);display:block;letter-spacing:2px}
+  .head-right{display:flex;align-items:center;gap:8px}
+  .chip{
+    background:var(--card);border:1px solid var(--line);color:var(--ink);
+    border-radius:999px;padding:6px 12px;font-size:12.5px;font-weight:700;
+    display:flex;align-items:center;gap:6px;box-shadow:var(--shadow);
+    font-variant-numeric:tabular-nums;
+  }
+  .icon-btn{
+    width:34px;height:34px;border-radius:50%;border:1px solid var(--line);
+    background:var(--card);color:var(--ink);font-size:16px;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow);
+    transition:transform .15s ease;
+  }
+  .icon-btn:active{transform:scale(.88)}
+
+  /* ============ 舞台 ============ */
+  .stage{
+    position:relative;background:var(--card);border-radius:var(--r-lg);
+    box-shadow:var(--shadow);border:1px solid var(--line);
+    padding:22px 16px 18px;overflow:hidden;
+  }
+  .sky-badge{
+    position:absolute;top:14px;right:14px;font-size:11px;font-weight:800;
+    background:var(--butter);color:var(--ink);border-radius:999px;padding:5px 10px;
+    display:flex;align-items:center;gap:5px;
+  }
+  .bubble{
+    max-width:76%;margin:0 auto 10px;background:var(--butter);
+    border-radius:18px;border-bottom-right-radius:4px;
+    padding:10px 14px;font-size:13.5px;font-weight:700;text-align:center;
+    position:relative;transition:background .3s;
+  }
+  .bubble::after{
+    content:"";position:absolute;right:22px;bottom:-7px;width:14px;height:14px;
+    background:var(--butter);transform:rotate(45deg);border-radius:3px;
+  }
+  #mascotWrap{position:relative;width:220px;margin:0 auto;animation:bob 3.2s ease-in-out infinite}
+  @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+  #mascotSvg{width:100%;height:auto;display:block}
+  .hydration{
+    display:flex;align-items:center;gap:10px;margin:12px auto 0;max-width:300px;
+  }
+  .hydration .bar{
+    flex:1;height:14px;background:var(--tomato-soft);border-radius:999px;overflow:hidden;
+    border:1.5px solid var(--line);position:relative;
+  }
+  .hydration .bar i{
+    display:block;height:100%;border-radius:999px;
+    background:linear-gradient(90deg,#7BC86C,var(--leaf));
+    transition:width .6s cubic-bezier(.34,1.56,.64,1), background .4s;
+  }
+  .hydration .bar i.dry{background:linear-gradient(90deg,#FFC53D,#F08C3A)}
+  .hydration .bar i.crit{background:linear-gradient(90deg,#FF8A5C,var(--tomato-deep))}
+  .hydration span{font-size:12px;font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap}
+
+  /* 番茄君六段状态（class 体系，避免 ID 特异性压制状态规则） */
+  .mascot .lid{transform:translateY(0);transition:transform .5s ease}
+  .mascot .bags,.mascot .smoke,.mascot .sweat{opacity:0;transition:opacity .5s ease}
+  .mascot .m-body{transform-origin:100px 120px;transition:transform .6s ease, filter .6s ease}
+  .mascot .m-leaf{transform-origin:100px 44px;transition:transform .6s ease}
+  .mascot .mouth2,.mascot .mouth3,.mascot .mouth4{display:none}
+  .mascot .mouth1{display:block}
+  .mascot .eye,.mascot .spark{transition:opacity .4s}
+  .mascot.st0 .m-body{filter:saturate(1.15) brightness(1.02)}
+  .mascot.st1 .lid{transform:translateY(2px)} .mascot.st1 .mouth1{display:none} .mascot.st1 .mouth2{display:block}
+  .mascot.st2 .lid{transform:translateY(4px)} .mascot.st2 .mouth1{display:none} .mascot.st2 .mouth2{display:none} .mascot.st2 .mouth3{display:block} .mascot.st2 .sweat{opacity:1}
+  .mascot.st2 .m-body{filter:saturate(.85)} .mascot.st2 .m-leaf{transform:rotate(4deg)}
+  .mascot.st3 .lid{transform:translateY(6px)} .mascot.st3 .mouth1{display:none} .mascot.st3 .mouth3{display:block} .mascot.st3 .bags{opacity:1} .mascot.st3 .sweat{opacity:1}
+  .mascot.st3 .m-body{filter:saturate(.68) brightness(.97)} .mascot.st3 .m-leaf{transform:rotate(8deg)}
+  .mascot.st4 .lid{transform:translateY(7px)} .mascot.st4 .mouth1{display:none} .mascot.st4 .mouth4{display:block} .mascot.st4 .bags{opacity:1} .mascot.st4 .sweat{opacity:1} .mascot.st4 .smoke{opacity:1}
+  .mascot.st4 .m-body{filter:saturate(.55) brightness(.95) hue-rotate(-6deg)} .mascot.st4 .m-leaf{transform:rotate(12deg)}
+  .mascot.st5 .lid{transform:translateY(9px)} .mascot.st5 .spark{opacity:0} .mascot.st5 .mouth1{display:none} .mascot.st5 .mouth4{display:block} .mascot.st5 .bags{opacity:1} .mascot.st5 .smoke{opacity:1}
+  .mascot.st5 .m-body{filter:saturate(.4) brightness(.92) hue-rotate(-6deg);transform:scaleY(.93) rotate(-3deg)} .mascot.st5 .m-leaf{transform:rotate(20deg) scaleY(.85)}
+  .mascot .puff{animation:puffFloat 2.6s ease-in-out infinite}
+  .mascot .p2{animation-delay:.5s} .mascot .p3{animation-delay:1s}
+  @keyframes puffFloat{0%,100%{transform:translateY(0);opacity:.9}50%{transform:translateY(-8px);opacity:.5}}
+  .mascot .eye-group{animation:blink 4.6s infinite}
+  @keyframes blink{0%,94%,100%{transform:scaleY(1)}97%{transform:scaleY(.08)}}
+
+  /* ============ 主按钮区 ============ */
+  .actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
+  .btn{
+    border:none;border-radius:22px;padding:15px 10px;font-size:16px;font-weight:800;
+    cursor:pointer;color:#fff;font-family:inherit;position:relative;
+    transition:transform .18s cubic-bezier(.34,1.56,.64,1), box-shadow .18s;
+  }
+  .btn:active{transform:scale(.94)}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .btn-main{grid-column:1 / -1;background:linear-gradient(145deg,var(--tomato),var(--tomato-deep));box-shadow:0 10px 22px rgba(232,80,60,.35);font-size:18px;padding:17px 10px}
+  .btn-main.counting{background:linear-gradient(145deg,#F08C3A,var(--tomato-deep));animation:pulseGlow 2.4s ease-in-out infinite}
+  @keyframes pulseGlow{0%,100%{box-shadow:0 10px 22px rgba(232,80,60,.35)}50%{box-shadow:0 10px 34px rgba(255,138,92,.55)}}
+  .btn-sleep{background:linear-gradient(145deg,#6E7BF2,#4A5BD8);box-shadow:0 8px 18px rgba(74,91,216,.30)}
+  .btn-ritual{background:linear-gradient(145deg,var(--gold),var(--gold-deep));color:#5A4210;box-shadow:0 8px 18px rgba(245,166,35,.32)}
+  .btn-ghost{background:var(--card);color:var(--ink);border:1.5px dashed var(--line)}
+  .btn small{display:block;font-size:10.5px;font-weight:600;opacity:.75;margin-top:2px}
+
+  .count-line{
+    text-align:center;font-size:12.5px;font-weight:700;color:var(--ink-soft);
+    margin-top:12px;font-variant-numeric:tabular-nums;
+  }
+  .count-line b{color:var(--tomato-deep);font-size:14px}
+  body.night .count-line b{color:var(--tomato)}
+
+  /* ============ 篮子 ============ */
+  .basket{
+    margin-top:14px;background:var(--card);border:1.5px solid var(--line);
+    border-radius:var(--r-md);padding:12px 14px;box-shadow:var(--shadow);
+  }
+  .basket h4{margin:0 0 8px;font-size:12.5px;color:var(--ink-soft);font-weight:800;display:flex;justify-content:space-between;align-items:center}
+  .basket h4 .mini-timer{color:var(--tomato-deep);font-variant-numeric:tabular-nums}
+  .tomatoes{display:flex;flex-wrap:wrap;gap:6px;min-height:44px;align-items:center}
+  .tomatoes .empty{font-size:12.5px;color:var(--ink-soft)}
+  .mini{width:38px;height:38px;animation:popIn .45s cubic-bezier(.34,1.56,.64,1)}
+  @keyframes popIn{from{transform:scale(0) rotate(-40deg)}to{transform:scale(1) rotate(0)}}
+
+  /* 掉落动画 */
+  .fall-tomato{position:absolute;z-index:5;width:34px;height:34px;pointer-events:none}
+  @keyframes fallDown{
+    0%{transform:translateY(-30px) rotate(0deg) scale(1);opacity:0}
+    12%{opacity:1}
+    78%{transform:translateY(190px) rotate(140deg) scale(1)}
+    88%{transform:translateY(175px) rotate(150deg) scale(1.12, .8)}
+    100%{transform:translateY(185px) rotate(155deg) scale(1);opacity:0}
+  }
+
+  /* ============ 面板 Tabs ============ */
+  .tabs{display:flex;gap:8px;margin-top:16px}
+  .tab{
+    flex:1;border:1.5px solid var(--line);background:var(--card);color:var(--ink-soft);
+    border-radius:999px;padding:9px 4px;font-size:13.5px;font-weight:800;cursor:pointer;
+    transition:all .2s;font-family:inherit;
+  }
+  .tab.on{background:var(--tomato);border-color:var(--tomato);color:#fff;box-shadow:0 6px 16px rgba(232,80,60,.3)}
+  .panel{display:none;margin-top:10px;background:var(--card);border:1.5px solid var(--line);border-radius:var(--r-md);padding:16px;box-shadow:var(--shadow)}
+  .panel.on{display:block;animation:panelIn .3s ease}
+  @keyframes panelIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  .stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .stat{background:var(--butter);border-radius:var(--r-sm);padding:12px 10px;text-align:center}
+  .stat b{display:block;font-size:21px;font-variant-numeric:tabular-nums}
+  .stat span{font-size:11px;color:var(--ink-soft);font-weight:700}
+  .level-card{margin-top:12px;background:var(--butter);border-radius:var(--r-sm);padding:14px;text-align:center}
+  .level-card .lv-title{font-size:17px;font-weight:900}
+  .level-card .lv-sub{font-size:12px;color:var(--ink-soft);margin-top:3px;font-weight:600}
+  .lv-bar{height:12px;border-radius:999px;background:rgba(232,80,60,.14);margin-top:10px;overflow:hidden}
+  .lv-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--gold),var(--tomato));border-radius:999px;transition:width .6s}
+  .rules li{margin:0 0 10px 0;font-size:13.5px;line-height:1.65}
+  .rules ul{padding-left:20px;margin:0}
+  .rules .gold-word{color:var(--gold-deep);font-weight:800}
+  .rules .red-word{color:var(--tomato-deep);font-weight:800}
+  .danger-line{text-align:right;margin-top:6px}
+  .danger-line button{
+    background:none;border:none;color:var(--ink-soft);font-size:11px;cursor:pointer;
+    text-decoration:underline;font-family:inherit;
+  }
+
+  /* ============ 弹层通用 ============ */
+  .overlay{
+    position:fixed;inset:0;background:rgba(40,20,14,.55);backdrop-filter:blur(4px);
+    display:none;align-items:center;justify-content:center;z-index:50;padding:18px;
+  }
+  .overlay.on{display:flex;animation:fadeIn .2s ease}
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  .modal{
+    background:var(--card);border-radius:var(--r-lg);width:100%;max-width:420px;
+    padding:22px 20px;box-shadow:0 24px 60px rgba(0,0,0,.3);
+    animation:modalIn .35s cubic-bezier(.34,1.56,.64,1);position:relative;
+    max-height:88vh;overflow:auto;
+  }
+  @keyframes modalIn{from{opacity:0;transform:translateY(24px) scale(.92)}to{opacity:1;transform:none}}
+  .modal h3{margin:0 0 6px;font-size:19px;text-align:center}
+  .modal .sub{text-align:center;font-size:12.5px;color:var(--ink-soft);margin:0 0 14px;font-weight:600}
+
+  /* 报告卡 */
+  .report{background:var(--butter);border-radius:var(--r-md);padding:16px 14px;text-align:center}
+  .report .rp-mascot{width:110px;margin:0 auto 6px}
+  .report .rp-mascot svg{width:100%;height:auto;display:block}
+  .report .rp-title{font-size:12px;font-weight:800;color:var(--ink-soft);letter-spacing:2px}
+  .report .rp-name{font-size:22px;font-weight:900;margin:4px 0 10px}
+  .report .rp-row{
+    display:flex;justify-content:space-between;align-items:center;background:var(--card);
+    border-radius:12px;padding:9px 14px;margin:7px 0;font-size:13.5px;font-weight:700;
+  }
+  .report .rp-row b{font-size:16px;font-variant-numeric:tabular-nums;color:var(--tomato-deep)}
+  .report .rp-verdict{
+    margin-top:10px;font-size:13px;font-weight:700;background:var(--card);
+    border-radius:12px;padding:10px 12px;line-height:1.6;
+  }
+  .report .rp-brand{
+    margin-top:10px;font-size:11px;font-weight:800;color:var(--ink-soft);letter-spacing:1px
+  }
+  .rp-medal{font-size:30px;line-height:1}
+  .modal .btns{display:flex;gap:10px;margin-top:16px}
+  .modal .btns .btn{flex:1;padding:13px 8px;font-size:15px}
+
+  /* 仪式 */
+  .ring-wrap{position:relative;width:210px;margin:6px auto 4px}
+  .ring-wrap svg{width:100%;transform:rotate(-90deg)}
+  .ring-bg{fill:none;stroke:var(--butter);stroke-width:13}
+  .ring-fg{fill:none;stroke:url(#goldGrad);stroke-width:13;stroke-linecap:round;transition:stroke-dashoffset .4s linear}
+  .ring-center{
+    position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  }
+  .ring-center b{font-size:34px;font-variant-numeric:tabular-nums}
+  .ring-center span{font-size:11px;color:var(--ink-soft);font-weight:700}
+  .ritual-tips{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin:10px 0 2px}
+  .ritual-tips i{
+    font-style:normal;background:var(--butter);border-radius:999px;padding:6px 11px;
+    font-size:12px;font-weight:700;
+  }
+
+  /* 设置 */
+  .set-row{margin:14px 0}
+  .set-row label{display:block;font-size:13px;font-weight:800;margin-bottom:8px}
+  .set-row input{
+    width:100%;border:1.5px solid var(--line);background:var(--card);color:var(--ink);
+    border-radius:12px;padding:11px 12px;font-size:14px;font-weight:700;font-family:inherit;
+  }
+  .set-row input:focus{outline:2px solid var(--tomato-soft);border-color:var(--tomato)}
+  .seg{display:flex;gap:8px}
+  .seg button{
+    flex:1;border:1.5px solid var(--line);background:var(--card);color:var(--ink);
+    border-radius:12px;padding:10px 4px;font-size:13.5px;font-weight:800;cursor:pointer;font-family:inherit;
+    transition:all .15s;
+  }
+  .seg button.on{background:var(--leaf);border-color:var(--leaf);color:#fff}
+  .fast-tip{font-size:11.5px;color:var(--ink-soft);text-align:center;margin-top:10px;font-weight:600}
+
+  /* Toast */
+  #toasts{position:fixed;top:max(14px, env(safe-area-inset-top));left:50%;transform:translateX(-50%);z-index:99;display:flex;flex-direction:column;gap:8px;align-items:center;width:min(92vw,420px);pointer-events:none}
+  .toast{
+    background:var(--ink);color:var(--cream);border-radius:999px;padding:10px 18px;
+    font-size:13px;font-weight:700;box-shadow:0 10px 24px rgba(0,0,0,.25);
+    animation:toastIn .3s cubic-bezier(.34,1.56,.64,1);text-align:center;
+  }
+  @keyframes toastIn{from{opacity:0;transform:translateY(-14px) scale(.85)}to{opacity:1;transform:none}}
+  .toast.bye{opacity:0;transform:translateY(-10px);transition:all .3s}
+
+  footer{
+    text-align:center;font-size:11px;color:var(--ink-soft);margin-top:18px;
+    font-weight:600;line-height:1.7;
+  }
+  footer .fast-badge{color:var(--gold-deep);font-weight:800}
+  @media (max-width:400px){
+    .btn{font-size:14.5px}
+    #mascotWrap{width:190px}
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="logo">
+      <svg class="lg-tomato" viewBox="0 0 100 100"><path d="M50 26C72 26 82 44 82 58c0 18-14 28-32 28S18 76 18 58c0-14 10-32 32-32z" fill="#FF6B57"/><path d="M50 28c-2-8 0-14 4-18 1 8 0 13-2 18zM50 27c-8-6-18-6-24-2 8 3 17 5 24 4zM50 27c8-7 18-8 24-5-8 4-17 6-24 6z" fill="#5FAE58"/></svg>
+      <div>熬夜番茄钟<small>AOYE TOMATO</small></div>
+    </div>
+    <div class="head-right">
+      <div class="chip" id="clock">00:00</div>
+      <button class="icon-btn" id="btn-mute" title="音效开关">🔊</button>
+      <button class="icon-btn" id="btn-set" title="设置">⚙️</button>
+    </div>
+  </header>
+
+  <section class="stage" id="stage">
+    <div class="sky-badge" id="skyBadge">🌙 夜里好</div>
+    <div class="bubble" id="bubble">今天也要水灵灵地活着！</div>
+    <div id="mascotWrap">
+      <svg id="mascotSvg" class="mascot" viewBox="0 0 200 200" aria-label="番茄君">
+        <defs>
+          <radialGradient id="bodyGrad" cx="38%" cy="30%" r="75%">
+            <stop offset="0%" stop-color="#FF8E7A"/>
+            <stop offset="55%" stop-color="#FF6B57"/>
+            <stop offset="100%" stop-color="#EA4E3C"/>
+          </radialGradient>
+        </defs>
+        <ellipse cx="100" cy="186" rx="52" ry="8" fill="rgba(74,59,47,.10)"/>
+        <g class="smoke">
+          <circle class="puff p1" cx="72" cy="36" r="7" fill="#B9AFC4"/>
+          <circle class="puff p2" cx="99" cy="26" r="5.5" fill="#C9C0D8"/>
+          <circle class="puff p3" cx="124" cy="38" r="6" fill="#B9AFC4"/>
+        </g>
+        <g class="m-body">
+          <path d="M100 46C142 46 162 82 162 116c0 36-28 56-62 56s-62-20-62-56c0-34 20-70 62-70z" fill="url(#bodyGrad)"/>
+          <path d="M62 86c4-14 16-24 27-27-6 11-13 22-17 31-6 1-11-1-10-4z" fill="rgba(255,255,255,.35)"/>
+          <g class="m-leaf">
+            <path d="M100 48c-1-9 1-16 6-21 1 9-1 15-4 21z" fill="#4A8F44"/>
+            <path d="M101 42c-9-13-26-15-38-9 13 4 27 8 38 12z" fill="#5FAE58"/>
+            <path d="M99 42c9-14 26-18 39-13-12 7-27 12-39 15z" fill="#6FBE68"/>
+          </g>
+          <g class="m-face">
+            <g class="eye-group">
+              <ellipse class="eye" cx="78" cy="104" rx="7.5" ry="9.5" fill="#4A3B2F"/>
+              <ellipse class="eye" cx="122" cy="104" rx="7.5" ry="9.5" fill="#4A3B2F"/>
+              <circle class="spark" cx="80.5" cy="100" r="2.6" fill="#fff"/>
+              <circle class="spark" cx="124.5" cy="100" r="2.6" fill="#fff"/>
+            </g>
+            <rect class="lid" x="66" y="86" width="24" height="6" rx="3" fill="#EA4E3C"/>
+            <rect class="lid" x="110" y="86" width="24" height="6" rx="3" fill="#EA4E3C"/>
+            <g class="bags" stroke="#B4523F" stroke-width="2.4" fill="none" stroke-linecap="round">
+              <path d="M69 121q9 6 18 0"/>
+              <path d="M113 121q9 6 18 0"/>
+            </g>
+            <path class="mouth1" d="M88 129q12 11 24 0" stroke="#4A3B2F" stroke-width="3.4" fill="none" stroke-linecap="round"/>
+            <path class="mouth2" d="M88 133h24" stroke="#4A3B2F" stroke-width="3.4" fill="none" stroke-linecap="round"/>
+            <path class="mouth3" d="M88 134q6-6 12 0t12 0" stroke="#4A3B2F" stroke-width="3.2" fill="none" stroke-linecap="round"/>
+            <path class="mouth4" d="M88 136q12-12 24 0" stroke="#4A3B2F" stroke-width="3.4" fill="none" stroke-linecap="round"/>
+            <g fill="#FFB3A5" opacity=".9">
+              <ellipse cx="58" cy="122" rx="8.5" ry="5"/>
+              <ellipse cx="142" cy="122" rx="8.5" ry="5"/>
+            </g>
+            <path class="sweat" d="M151 88c5 9 5 16 0 19-5-3-5-10 0-19z" fill="#8FD3F4"/>
+          </g>
+        </g>
+      </svg>
+    </div>
+    <div class="hydration">
+      <span>💧 含水量</span>
+      <div class="bar"><i id="hydBar" style="width:100%"></i></div>
+      <span id="hydNum">100%</span>
+    </div>
+  </section>
+
+  <div class="actions">
+    <button class="btn btn-main" id="btn-burn">开熬 🍅<small>点一下，番茄钟开始替你记账</small></button>
+    <button class="btn btn-sleep" id="btn-sleep">我睡了 💤<small>结算今晚战报</small></button>
+    <button class="btn btn-ritual" id="btn-ritual">睡前仪式 ✨<small>25 分钟，救回一颗蔫番茄</small></button>
+  </div>
+  <div class="count-line" id="countLine">今晚还没开熬 · 番茄君水灵灵的</div>
+
+  <div class="basket">
+    <h4>
+      <span>🧺 今晚的蔫番茄篮</span>
+      <span class="mini-timer" id="basketTimer"></span>
+    </h4>
+    <div class="tomatoes" id="basket"><span class="empty">篮子空空，是好事</span></div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab on" data-panel="p1">今晚</button>
+    <button class="tab" data-panel="p2">债务总览</button>
+    <button class="tab" data-panel="p3">玩法</button>
+  </div>
+
+  <div class="panel on" id="p1">
+    <div class="stat-grid">
+      <div class="stat"><b id="st-awake">0</b><span>清醒分钟</span></div>
+      <div class="stat"><b id="st-tomato">0</b><span>今晚蔫番茄</span></div>
+      <div class="stat"><b id="st-gold">0</b><span>金番茄 ✨</span></div>
+      <div class="stat"><b id="st-streak">0</b><span>连续熬夜天数</span></div>
+    </div>
+  </div>
+
+  <div class="panel" id="p2">
+    <div class="stat-grid">
+      <div class="stat"><b id="tt-tomato">0</b><span>累计蔫番茄</span></div>
+      <div class="stat"><b id="tt-debt">0 分钟</b><span>累计欠觉</span></div>
+      <div class="stat"><b id="tt-nights">0</b><span>熬夜夜数</span></div>
+      <div class="stat"><b id="tt-gold">0</b><span>金番茄收藏 ✨</span></div>
+    </div>
+    <div class="level-card">
+      <div class="lv-title" id="lv-title">🌱 鲜番茄新手</div>
+      <div class="lv-sub" id="lv-sub">从没熬过夜？番茄君不信</div>
+      <div class="lv-bar"><i id="lvBar" style="width:0%"></i></div>
+      <div class="lv-sub" id="lvNext" style="margin-top:6px"></div>
+    </div>
+    <div class="danger-line"><button id="btn-reset">重置全部记录</button></div>
+  </div>
+
+  <div class="panel" id="p3">
+    <div class="rules">
+      <ul>
+        <li><span class="red-word">熬一颗，蔫一颗</span>：点「开熬」后，每熬满一个番茄（默认 25 分钟），掉落一颗<span class="red-word">蔫番茄</span>，番茄君含水量 −12%，并开始变蔫。</li>
+        <li><span class="gold-word">金番茄机制</span>：完成一次「睡前仪式」番茄钟（25 分钟放下手机 / 拉伸 / 读纸书），即可<span class="gold-word">救回一颗蔫番茄</span>——用番茄钟打败熬夜。</li>
+        <li>点「我睡了」结算今晚，生成《今晚熬夜报告》：称号、含水量、连续熬夜天数，一键复制战报。</li>
+        <li>债务总览记录你累计熬掉的所有番茄和欠下的觉；连续熬夜会叠 streak。</li>
+        <li>数据只存在你自己的浏览器里（localStorage），番茄君不外传你的黑历史。</li>
+        <li>彩蛋：网址后面加 <b>?fast=1</b> 进入演示模式，8 秒掉一颗番茄，方便试玩。</li>
+      </ul>
+    </div>
+  </div>
+
+  <footer>
+    番茄衰减模型 v1.0：每 25 分钟清醒，含水量 −12%<br>
+    纯原生 · 零依赖 · 单文件 · 断网双击即开<span id="fastTip"></span><br>
+    🍅 熬一颗，蔫一颗 —— 睡觉才能救回来
+  </footer>
+</div>
+
+<!-- 睡前仪式 -->
+<div class="overlay" id="ov-ritual">
+  <div class="modal">
+    <h3>✨ 睡前仪式</h3>
+    <p class="sub">接下来的 25 分钟，只做低刺激的事</p>
+    <div class="ring-wrap">
+      <svg viewBox="0 0 220 220">
+        <defs><linearGradient id="goldGrad" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#FFD76E"/><stop offset="100%" stop-color="#F5A623"/>
+        </linearGradient></defs>
+        <circle class="ring-bg" cx="110" cy="110" r="94"/>
+        <circle class="ring-fg" id="ringFg" cx="110" cy="110" r="94"/>
+      </svg>
+      <div class="ring-center"><b id="ritualClock">25:00</b><span>仪式进行中</span></div>
+    </div>
+    <div class="ritual-tips"><i>📱 手机放远</i><i>🧘 拉伸三分钟</i><i>📖 读两页纸书</i><i>💡 调暗灯光</i></div>
+    <div class="btns">
+      <button class="btn btn-ghost" id="ritual-cancel">不仪式了</button>
+    </div>
+  </div>
+</div>
+
+<!-- 报告卡 -->
+<div class="overlay" id="ov-report">
+  <div class="modal">
+    <h3 id="rpHead">今晚熬夜报告</h3>
+    <p class="sub" id="rpSub">已替你记在番茄上</p>
+    <div class="report">
+      <div class="rp-medal" id="rpMedal">🍅</div>
+      <div class="rp-title">TONIGHT'S VERDICT</div>
+      <div class="rp-name" id="rpName">修仙二期</div>
+      <div class="rp-mascot" id="rpMascot"></div>
+      <div class="rp-row"><span>今晚蔫番茄</span><b id="rpTomato">0 颗</b></div>
+      <div class="rp-row"><span>清醒时长</span><b id="rpAwake">0 分钟</b></div>
+      <div class="rp-row"><span>番茄含水量</span><b id="rpHyd">100%</b></div>
+      <div class="rp-row"><span>连续熬夜</span><b id="rpStreak">第 0 天</b></div>
+      <div class="rp-verdict" id="rpVerdict">——</div>
+      <div class="rp-brand">🍅 熬夜番茄钟 · 熬一颗，蔫一颗</div>
+    </div>
+    <div class="btns">
+      <button class="btn btn-ritual" id="rpCopy">📋 复制战报</button>
+      <button class="btn btn-sleep" id="rpClose">睡啦</button>
+    </div>
+  </div>
+</div>
+
+<!-- 设置 -->
+<div class="overlay" id="ov-set">
+    <div class="modal">
+    <h3>⚙️ 设置</h3>
+    <p class="sub">番茄的大小由你定</p>
+    <div class="set-row">
+      <label>🧸 你的昵称（出现在战报里）</label>
+      <input id="nickInput" type="text" maxlength="12" placeholder="比如：夜猫子小王" autocomplete="off">
+    </div>
+    <div class="set-row">
+      <label>🍅 蔫番茄长度（熬夜多久掉一颗）</label>
+      <div class="seg" id="segTomato">
+        <button data-v="25" class="on">25 分钟</button>
+        <button data-v="15">15 分钟</button>
+        <button data-v="5">5 分钟</button>
+      </div>
+    </div>
+    <div class="set-row">
+      <label>✨ 睡前仪式长度</label>
+      <div class="seg" id="segRitual">
+        <button data-v="25" class="on">25 分钟</button>
+        <button data-v="15">15 分钟</button>
+        <button data-v="5">5 分钟</button>
+      </div>
+    </div>
+    <div class="fast-tip">演示模式：地址栏加 ?fast=1，8 秒掉一颗番茄</div>
+    <div class="btns">
+      <button class="btn btn-main" id="setClose">好嘞</button>
+    </div>
+  </div>
+</div>
+
+<div id="toasts"></div>
+
+<script>
+(function(){
+  'use strict';
+  /* ================= 基础 ================= */
+  var $ = function(s){ return document.querySelector(s); };
+  var $$ = function(s){ return Array.prototype.slice.call(document.querySelectorAll(s)); };
+  var LS = 'aoye-tomato-v1';
+  var FAST = /[?#&]fast/.test(location.search + location.hash);
+
+  function defaults(){
+    return {
+      settings:{ tomatoMin:25, ritualMin:25, muted:false },
+      tonight: freshTonight(),
+      total:{ tomatoes:0, minutes:0, nights:0, gold:0, streak:0, lastNight:null }
+    };
+  }
+  function freshTonight(){
+    return { date: todayStr(), active:false, ms:0, tomatoes:0, gold:0, lastDropAt:0 };
+  }
+  function todayStr(d){
+    d = d || new Date();
+    return d.getFullYear() + '-' + ('0'+(d.getMonth()+1)).slice(-2) + '-' + ('0'+d.getDate()).slice(-2);
+  }
+  function dateBefore(str){
+    var d = new Date(str + 'T12:00:00');
+    d.setDate(d.getDate() - 1);
+    return todayStr(d);
+  }
+  function load(){
+    try{
+      var raw = localStorage.getItem(LS);
+      if(!raw) return null;
+      var s = JSON.parse(raw);
+      if(!s || !s.tonight || !s.total || !s.settings) return null;
+      return s;
+    }catch(e){ return null; }
+  }
+  function save(){ try{ localStorage.setItem(LS, JSON.stringify(S)); }catch(e){} }
+
+  var S = load() || defaults();
+  var nightJustEnded = false;
+
+  // 跨天自动归档（静默）
+  if(S.tonight.date !== todayStr()){
+    if(S.tonight.tomatoes > 0 || S.tonight.ms > 0 || S.tonight.gold > 0){
+      archiveNight(S.tonight, true);
+      nightJustEnded = true;
+    }
+    S.tonight = freshTonight();
+    save();
+  }
+
+  var effTomatoMs = function(){ return FAST ? 8000 : S.settings.tomatoMin * 60000; };
+  var effRitualMs = function(){ return FAST ? 8000 : S.settings.ritualMin * 60000; };
+
+  /* ================= 文案 ================= */
+  var QUIPS = [
+    '「再刷 5 分钟就睡」——第 N 次听你说了',
+    '凌晨的算法最懂你，可惜它不心疼你',
+    '番茄替你蔫了一分，水分 −12%',
+    '枕头给你发来一条消息：想你了',
+    '明天的你正在排队骂现在的你',
+    '番茄君开始考虑要不要换个主人',
+    '修仙界传来惊叹：又渡了一劫',
+    '夜是熬不完的，但番茄是会蔫完的',
+    '你的黑眼圈和番茄的含水量同步下降',
+    '别熬了，再熬番茄酱都不新鲜了'
+  ];
+  var VERDICTS = [
+    '番茄已蔫，回头是岸。',
+    '你不是在熬夜，你是在给番茄上刑。',
+    '熬夜一时爽，早起火葬场。',
+    '今晚的觉，明早的你是补不回来的。',
+    '番茄君已记仇，建议立刻睡觉平息。',
+    '再熬下去，番茄就要变成番茄干了。',
+    '夜风替你叹了口气。',
+    '熬的每一颗番茄，都是明天欠的觉。'
+  ];
+  var BUBBLES = [
+    '今天也要水灵灵地活着！',
+    '有点困了，但我还能撑……你确定？',
+    '眼皮在打架，别装看不见',
+    '我已经黑眼圈了，你呢？',
+    '我快冒烟了，救救孩子 🥀',
+    '别熬了……我已经……是番茄干了……'
+  ];
+  var NIGHT_TITLES = [
+    { min:6,  name:'人形番茄干', medal:'🥀' },
+    { min:5,  name:'深夜哲学家', medal:'🚬' },
+    { min:4,  name:'修仙有瘾', medal:'🔥' },
+    { min:3,  name:'算法狙击手', medal:'🎯' },
+    { min:2,  name:'再刷五分钟选手', medal:'📱' },
+    { min:1,  name:'就熬了一点点', medal:'🍅' }
+  ];
+  var LEVELS = [
+    { min:3000, name:'👑 王者·人形番茄干', sub:'番茄君已阵亡，请节哀' },
+    { min:1200, name:'🏆 铂金·爆肝战士',   sub:'肝是耗材，番茄是证人' },
+    { min:600,  name:'🥇 黄金·渡劫修仙',   sub:'天道酬勤，不酬熬夜' },
+    { min:300,  name:'🥈 白银·资深夜猫',   sub:'再熬就要升黄金了，快睡' },
+    { min:100,  name:'🥉 青铜·入门夜猫',   sub:'趁番茄还水灵，回头是岸' },
+    { min:0,    name:'🌱 鲜番茄新手',      sub:'从没熬过夜？番茄君不信' }
+  ];
+
+  /* ================= 音效 ================= */
+  var actx = null;
+  function ac(){
+    if(!actx){
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if(!AC) return null;
+      actx = new AC();
+    }
+    if(actx.state === 'suspended') actx.resume();
+    return actx;
+  }
+  function pop(){
+    if(S.settings.muted) return;
+    var c = ac(); if(!c) return;
+    var t = c.currentTime;
+    var o = c.createOscillator(), g = c.createGain();
+    o.type = 'sine';
+    o.frequency.setValueAtTime(520, t);
+    o.frequency.exponentialRampToValueAtTime(160, t + 0.10);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.5, t + 0.015);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.14);
+    o.connect(g); g.connect(c.destination);
+    o.start(t); o.stop(t + 0.16);
+  }
+  function chime(){
+    if(S.settings.muted) return;
+    var c = ac(); if(!c) return;
+    var t = c.currentTime;
+    [[880, 0], [1174.7, 0.18]].forEach(function(p){
+      var o = c.createOscillator(), g = c.createGain();
+      o.type = 'sine';
+      o.frequency.value = p[0];
+      g.gain.setValueAtTime(0.0001, t + p[1]);
+      g.gain.exponentialRampToValueAtTime(0.35, t + p[1] + 0.03);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + p[1] + 1.1);
+      o.connect(g); g.connect(c.destination);
+      o.start(t + p[1]); o.stop(t + p[1] + 1.2);
+    });
+  }
+
+  /* ================= Toast ================= */
+  function toast(msg){
+    var box = $('#toasts');
+    var el = document.createElement('div');
+    el.className = 'toast';
+    el.textContent = msg;
+    box.appendChild(el);
+    setTimeout(function(){
+      el.classList.add('bye');
+      setTimeout(function(){ el.remove(); }, 350);
+    }, 2800);
+  }
+
+  /* ================= 迷你番茄 SVG ================= */
+  function miniTomato(kind){
+    var fill = kind === 'gold' ? '#FFC53D' : '#C96A54';
+    var face = kind === 'gold' ? '#7A5A16' : '#6B4A3C';
+    var extra = '';
+    if(kind === 'gold'){
+      extra = '<path d="M30 6l2 5 5 2-5 2-2 5-2-5-5-2 5-2z" fill="#FFF3C4"/>';
+    }else{
+      extra = '<path d="M26 30q4 3 8 0" stroke="'+face+'" stroke-width="2.2" fill="none" stroke-linecap="round"/><ellipse cx="22" cy="26" rx="3" ry="1.8" fill="'+face+'" opacity=".55"/><ellipse cx="42" cy="26" rx="3" ry="1.8" fill="'+face+'" opacity=".55"/>';
+    }
+    return '<svg class="mini" viewBox="0 0 64 64">' +
+      '<ellipse cx="32" cy="58" rx="14" ry="2.5" fill="rgba(74,59,47,.10)"/>' +
+      '<path d="M32 12c14 0 20 10 20 19 0 11-9 17-20 17s-20-6-20-17c0-9 6-19 20-19z" fill="'+fill+'"/>' +
+      '<path d="M32 14c0-4 1-7 4-9-1 4-1 7-2 10z" fill="#4A8F44"/>' +
+      '<path d="M31 13c-4-5-10-6-15-4 5 2 10 4 15 5z" fill="#5FAE58"/>' +
+      '<path d="M33 13c5-5 11-6 15-4-5 2-10 4-15 5z" fill="#6FBE68"/>' +
+      '<circle cx="26" cy="26" r="2.4" fill="'+face+'"/><circle cx="38" cy="26" r="2.4" fill="'+face+'"/>' +
+      extra + '</svg>';
+  }
+
+  /* ================= 业务 ================= */
+  function hydration(n){ return Math.max(20, 100 - 12 * n); }
+
+  function dropTomato(){
+    S.tonight.tomatoes++;
+    pop();
+    // 掉落动画
+    var st = $('#stage');
+    var f = document.createElement('div');
+    f.className = 'fall-tomato';
+    f.style.left = (30 + Math.random() * 55) + '%';
+    f.style.top = '70px';
+    f.innerHTML = miniTomato('wither');
+    f.querySelector('svg').style.animation = 'fallDown 1.1s cubic-bezier(.45,.05,.55,.95) forwards';
+    st.appendChild(f);
+    setTimeout(function(){ f.remove(); }, 1200);
+    toast(QUIPS[Math.floor(Math.random() * QUIPS.length)].replace('第 N 次', '第 ' + S.tonight.tomatoes + ' 次'));
+    save();
+  }
+
+  function archiveNight(t, silent){
+    S.total.tomatoes += t.tomatoes;
+    S.total.minutes += Math.round(t.ms / 60000);
+    S.total.gold += t.gold;
+    if(t.tomatoes > 0){
+      S.total.nights++;
+      if(S.total.lastNight === dateBefore(t.date)) S.total.streak++;
+      else S.total.streak = 1;
+      S.total.lastNight = t.date;
+    }
+    save();
+  }
+
+  var dayJokeSaid = false;
+  function toggleBurn(){
+    if(S.tonight.active){
+      S.tonight.active = false;
+      toast('计时暂停了，但你的夜不会暂停');
+    }else{
+      S.tonight.active = true;
+      S.tonight.lastDropAt = Date.now();
+      var h = new Date().getHours();
+      if((h >= 8 && h < 22) && !dayJokeSaid){
+        toast('白天不睡叫摆烂，不叫熬夜。账，还是给你记上 🍅');
+        dayJokeSaid = true;
+      }else{
+        toast('开熬！番茄钟开始记账，25 分钟一颗');
+      }
+    }
+    save();
+  }
+
+  function nightTitle(n){
+    for(var i = 0; i < NIGHT_TITLES.length; i++){
+      if(n >= NIGHT_TITLES[i].min) return NIGHT_TITLES[i];
+    }
+    return { name:'早睡冠军', medal:'🏆' };
+  }
+
+  function iSlept(){
+    var t = S.tonight;
+    var n = t.tomatoes;
+    var mins = Math.round(t.ms / 60000);
+    var reportState = Math.min(5, n);
+    archiveNight(t, false);
+    var streakNow = S.total.streak;
+    var isChampion = (n === 0);
+    openReport(isChampion, n, mins, reportState, streakNow);
+    S.tonight = freshTonight();
+    save();
+  }
+
+  /* ================= 报告卡 ================= */
+  function openReport(champion, n, mins, state, streak){
+    var nick = (S.settings && S.settings.nick) ? S.settings.nick : '';
+    var title = champion ? { name:'早睡冠军', medal:'🏆' } : nightTitle(n);
+    var head = (nick ? nick + '的' : '') + (champion ? '今晚早睡报告' : '今晚熬夜报告');
+    $('#rpHead').textContent = head;
+    $('#rpSub').textContent = champion ? '番茄君水灵得能掐出水' : '已替你记在番茄上';
+    $('#rpMedal').textContent = title.medal;
+    $('#rpName').textContent = champion ? '今晚 0 颗蔫番茄' : title.name;
+    var m = $('#rpMascot');
+    var clone = $('#mascotSvg').cloneNode(true);
+    clone.removeAttribute('id');
+    clone.setAttribute('class', 'mascot st' + state);
+    m.innerHTML = '';
+    m.appendChild(clone);
+    $('#rpTomato').textContent = n + ' 颗';
+    $('#rpAwake').textContent = mins + ' 分钟';
+    $('#rpHyd').textContent = hydration(n) + '%';
+    $('#rpStreak').textContent = champion ? '无需连续' : '第 ' + streak + ' 天';
+    $('#rpVerdict').textContent = champion
+      ? '判词：今晚你没有熬出一颗番茄，番茄君决定为你骄傲一整天。'
+      : '判词：' + VERDICTS[Math.floor(Math.random() * VERDICTS.length)];
+    $('#ov-report').classList.add('on');
+    $('#rpClose').onclick = function(){ $('#ov-report').classList.remove('on'); render(); };
+    $('#rpCopy').onclick = function(){
+      var text =
+        '🍅 熬夜番茄钟 · ' + head + '\n' +
+        (champion
+          ? '今晚蔫番茄：0 颗（早睡冠军）\n番茄含水量：100%'
+          : '今晚蔫番茄：' + n + ' 颗（每颗 25 分钟）\n清醒时长：' + mins + ' 分钟\n番茄含水量：' + hydration(n) + '%\n今晚称号：【' + title.name + '】\n连续熬夜：第 ' + streak + ' 天') +
+        '\n' + $('#rpVerdict').textContent + '\n（熬夜，熬一颗，蔫一颗——你的番茄还好吗？）';
+      copyText(text);
+    };
+  }
+  function copyText(t){
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(t).then(function(){ toast('战报已复制，去晒晒 📋'); },
+        function(){ fallbackCopy(t); });
+    }else{ fallbackCopy(t); }
+  }
+  function fallbackCopy(t){
+    var ta = document.createElement('textarea');
+    ta.value = t; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    try{ document.execCommand('copy'); toast('战报已复制，去晒晒 📋'); }
+    catch(e){ toast('复制失败，长按手动复制吧'); }
+    ta.remove();
+  }
+
+  /* ================= 睡前仪式 ================= */
+  var ritual = { active:false, total:0, left:0 };
+  function startRitual(){
+    if(ritual.active) return;
+    if(S.tonight.active){ toast('仪式前先暂停熬夜计时吧（再点一下开熬）'); return; }
+    ritual.active = true;
+    ritual.total = effRitualMs();
+    ritual.left = ritual.total;
+    $('#ov-ritual').classList.add('on');
+    renderRitual();
+  }
+  function renderRitual(){
+    var c = 2 * Math.PI * 94;
+    var fg = $('#ringFg');
+    fg.style.strokeDasharray = c;
+    fg.style.strokeDashoffset = c * (1 - (ritual.total - ritual.left) / ritual.total);
+    var s = Math.ceil(ritual.left / 1000);
+    $('#ritualClock').textContent =
+      ('0' + Math.floor(s / 60)).slice(-2) + ':' + ('0' + (s % 60)).slice(-2);
+  }
+  function ritualTick(dt){
+    ritual.left -= dt;
+    if(ritual.left <= 0){
+      finishRitual();
+    }else{
+      renderRitual();
+    }
+  }
+  function finishRitual(){
+    ritual.active = false;
+    $('#ov-ritual').classList.remove('on');
+    chime();
+    S.tonight.gold++;
+    if(S.tonight.tomatoes > 0){
+      S.tonight.tomatoes--;
+      toast('✨ 金番茄救回了一颗蔫番茄！');
+    }else{
+      toast('✨ 金番茄入库！今晚番茄君很安全');
+    }
+    S.tonight.lastDropAt = Date.now();
+    save();
+  }
+
+  /* ================= 渲染 ================= */
+  function levelOf(min){
+    for(var i = 0; i < LEVELS.length; i++){
+      if(min >= LEVELS[i].min) return i;
+    }
+    return LEVELS.length - 1;
+  }
+  function render(){
+    var now = new Date();
+    // 时钟
+    $('#clock').textContent =
+      ('0' + now.getHours()).slice(-2) + ':' + ('0' + now.getMinutes()).slice(-2);
+    // 夜/昼
+    var h = now.getHours();
+    var night = (h >= 22 || h < 6);
+    document.body.classList.toggle('night', night);
+    $('#skyBadge').textContent = night
+      ? (h < 3 ? '🌙 深夜 · 番茄高危时段' : '🌙 夜里好')
+      : (h < 11 ? '☀️ 早上好' : h < 18 ? '☀️ 白天不熬，叫清醒' : '🌆 晚上好');
+    // 番茄君
+    var st = Math.min(5, S.tonight.tomatoes);
+    $('#mascotSvg').setAttribute('class', 'mascot st' + st);
+    $('#bubble').textContent = BUBBLES[st];
+    // 含水量
+    var hyd = hydration(S.tonight.tomatoes);
+    var bar = $('#hydBar');
+    bar.style.width = hyd + '%';
+    bar.className = hyd > 70 ? '' : (hyd > 45 ? 'dry' : 'crit');
+    $('#hydNum').textContent = hyd + '%';
+    // 按钮
+    var burn = $('#btn-burn');
+    burn.classList.toggle('counting', S.tonight.active);
+    burn.innerHTML = S.tonight.active
+      ? '熬着呢… <small>点一下暂停记账</small>'
+      : '开熬 🍅<small>点一下，番茄钟开始替你记账</small>';
+    // 计时行
+    var mins = Math.floor(S.tonight.ms / 60000);
+    if(S.tonight.tomatoes === 0 && mins === 0){
+      $('#countLine').textContent = S.tonight.active ? '番茄钟走着…第一颗番茄还没掉' : '今晚还没开熬 · 番茄君水灵灵的';
+    }else{
+      $('#countLine').innerHTML = '已清醒 <b>' + mins + '</b> 分钟 · 今晚 <b>' + S.tonight.tomatoes + '</b> 颗蔫番茄' + (S.tonight.active ? '' : '（已暂停）');
+    }
+    // 篮子
+    var bk = $('#basket');
+    bk.innerHTML = '';
+    if(S.tonight.tomatoes === 0 && S.tonight.gold === 0){
+      bk.innerHTML = '<span class="empty">篮子空空，是好事</span>';
+    }else{
+      var show = Math.min(S.tonight.tomatoes, 12);
+      for(var i = 0; i < show; i++){ bk.insertAdjacentHTML('beforeend', miniTomato('wither')); }
+      if(S.tonight.tomatoes > 12){
+        bk.insertAdjacentHTML('beforeend', '<span class="empty">+' + (S.tonight.tomatoes - 12) + ' 颗</span>');
+      }
+      for(var j = 0; j < S.tonight.gold; j++){ bk.insertAdjacentHTML('beforeend', miniTomato('gold')); }
+    }
+    // 下一颗倒计时
+    if(S.tonight.active){
+      var passed = Date.now() - S.tonight.lastDropAt;
+      var remainMs = Math.max(0, effTomatoMs() - passed);
+      var rs = Math.ceil(remainMs / 1000);
+      $('#basketTimer').textContent = '下一颗 ' + ('0' + Math.floor(rs / 60)).slice(-2) + ':' + ('0' + (rs % 60)).slice(-2);
+    }else{
+      $('#basketTimer').textContent = '';
+    }
+    // 今晚面板
+    $('#st-awake').textContent = mins;
+    $('#st-tomato').textContent = S.tonight.tomatoes;
+    $('#st-gold').textContent = S.tonight.gold;
+    $('#st-streak').textContent = S.tonight.tomatoes > 0 ? (S.total.streak + 1) : S.total.streak;
+    // 债务面板
+    $('#tt-tomato').textContent = S.total.tomatoes;
+    var hh = Math.floor(S.total.minutes / 60), mm = S.total.minutes % 60;
+    $('#tt-debt').textContent = hh > 0 ? (hh + ' 小时 ' + mm + ' 分') : (mm + ' 分钟');
+    $('#tt-nights').textContent = S.total.nights;
+    $('#tt-gold').textContent = S.total.gold;
+    var li = levelOf(S.total.minutes);
+    $('#lv-title').textContent = LEVELS[li].name;
+    $('#lv-sub').textContent = LEVELS[li].sub;
+    var next = li === 0 ? null : LEVELS[li - 1];
+    if(next){
+      var span = next.min - LEVELS[li].min;
+      var done = S.total.minutes - LEVELS[li].min;
+      $('#lvBar').style.width = Math.min(100, done / span * 100) + '%';
+      $('#lvNext').textContent = '距【' + next.name.replace(/^[^ ]+ /,'') + '】还差 ' + (next.min - S.total.minutes) + ' 分钟欠觉';
+    }else{
+      $('#lvBar').style.width = '100%';
+      $('#lvNext').textContent = '已是巅峰，番茄君建议你去体检';
+    }
+    // fast 徽标
+    $('#fastTip').innerHTML = FAST ? ' · <span class="fast-badge">演示模式（?fast=1）</span>' : '';
+    // 静音按钮
+    $('#btn-mute').textContent = S.settings.muted ? '🔇' : '🔊';
+  }
+
+  /* ================= 心跳 ================= */
+  var lastTick = Date.now();
+  setInterval(function(){
+    var now = Date.now();
+    var dt = Math.min(now - lastTick, 10 * 60000);
+    lastTick = now;
+    // 跨天
+    if(S.tonight.date !== todayStr()){
+      if(S.tonight.tomatoes > 0 || S.tonight.ms > 0 || S.tonight.gold > 0){
+        archiveNight(S.tonight, true);
+        toast('昨晚的账，已经记上了');
+      }
+      S.tonight = freshTonight();
+      save();
+    }
+    if(S.tonight.active){
+      S.tonight.ms += dt;
+      if(now - S.tonight.lastDropAt >= effTomatoMs()){
+        S.tonight.lastDropAt = now;
+        dropTomato();
+      }
+    }
+    if(ritual.active){ ritualTick(dt); }
+    render();
+  }, 250);
+
+  /* ================= 事件 ================= */
+  $('#btn-burn').addEventListener('click', toggleBurn);
+  $('#btn-sleep').addEventListener('click', iSlept);
+  $('#btn-ritual').addEventListener('click', startRitual);
+  $('#ritual-cancel').addEventListener('click', function(){
+    ritual.active = false;
+    $('#ov-ritual').classList.remove('on');
+    toast('仪式中断，金番茄飞走了');
+  });
+  $('#btn-mute').addEventListener('click', function(){
+    S.settings.muted = !S.settings.muted;
+    save(); render();
+    toast(S.settings.muted ? '已静音 🔇' : '声音回来了 🔊');
+  });
+  $('#btn-set').addEventListener('click', function(){
+    $('#nickInput').value = (S.settings && S.settings.nick) ? S.settings.nick : '';
+    $('#ov-set').classList.add('on');
+  });
+  $('#nickInput').addEventListener('change', function(){
+    S.settings.nick = $('#nickInput').value.trim().slice(0, 12);
+    save();
+    toast(S.settings.nick ? '好的，' + S.settings.nick + '，账本记好了' : '昵称已清空');
+  });
+  $('#setClose').addEventListener('click', function(){ $('#ov-set').classList.remove('on'); });
+  $('#btn-reset').addEventListener('click', function(){
+    if(confirm('确定清空所有熬夜记录吗？番茄君会忘记你的黑历史（这可能也是好事）')){
+      localStorage.removeItem(LS);
+      S = defaults();
+      save(); render();
+      toast('记录已清空，重新做番茄');
+    }
+  });
+
+  $$('.tab').forEach(function(t){
+    t.addEventListener('click', function(){
+      $$('.tab').forEach(function(x){ x.classList.remove('on'); });
+      $$('.panel').forEach(function(x){ x.classList.remove('on'); });
+      t.classList.add('on');
+      $('#' + t.dataset.panel).classList.add('on');
+    });
+  });
+
+  function bindSeg(id, key){
+    $$('#' + id + ' button').forEach(function(b){
+      b.addEventListener('click', function(){
+        $$('#' + id + ' button').forEach(function(x){ x.classList.remove('on'); });
+        b.classList.add('on');
+        S.settings[key] = parseInt(b.dataset.v, 10);
+        save();
+        toast(key === 'tomatoMin' ? '蔫番茄长度：' + b.dataset.v + ' 分钟' : '仪式长度：' + b.dataset.v + ' 分钟');
+      });
+      if(parseInt(b.dataset.v, 10) === S.settings[key]) {
+        $$('#' + id + ' button').forEach(function(x){ x.classList.remove('on'); });
+        b.classList.add('on');
+      }
+    });
+  }
+  bindSeg('segTomato', 'tomatoMin');
+  bindSeg('segRitual', 'ritualMin');
+
+  // 戳番茄君彩蛋
+  $('#mascotWrap').addEventListener('click', function(){
+    if(!S.tonight.active){ toast('番茄君：还没开熬，戳我也没用'); return; }
+    toast('番茄君：别戳了，痒');
+  });
+
+  /* ================= 启动 ================= */
+  render();
+  if(nightJustEnded) setTimeout(function(){ toast('昨晚的账，已经记上了'); }, 600);
+  if(FAST) setTimeout(function(){ toast('演示模式：8 秒掉一颗番茄 🍅'); }, 300);
+})();
+</script>
+</body>
+</html>
